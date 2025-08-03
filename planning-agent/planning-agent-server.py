@@ -268,9 +268,9 @@ Please be specific and actionable in your recommendations.
         
         agent = PlanningAgent()
         result = await agent.create_plan(planning_prompt, preferred_model)
-            
-            if result["success"]:
-                response = f"""# Planning Result
+        
+        if result["success"]:
+            response = f"""# Planning Result
 
 **Model Used:** {result['model']}
 **Usage:** {result.get('usage', {})}
@@ -279,8 +279,8 @@ Please be specific and actionable in your recommendations.
 
 {result['content']}
 """
-            else:
-                response = f"❌ Planning failed: {result['error']}"
+        else:
+            response = f"❌ Planning failed: {result['error']}"
             
         return [types.TextContent(type="text", text=response)]
     
@@ -305,9 +305,9 @@ Be concise but thorough in your analysis.
         agent = PlanningAgent()
         # Use Gemini for quick complexity analysis
         result = await agent.plan_with_model(complexity_prompt, "google-gemini-2.5-pro")
-            
-            if result["success"]:
-                response = f"""# Complexity Analysis
+        
+        if result["success"]:
+            response = f"""# Complexity Analysis
 
 **Analyzed by:** {result['model']}
 
@@ -316,8 +316,8 @@ Be concise but thorough in your analysis.
 ---
 **Recommendation:** {"Use O3 for detailed planning" if "complex" in result['content'].lower() or "difficult" in result['content'].lower() else "Standard planning sufficient"}
 """
-            else:
-                response = f"❌ Analysis failed: {result['error']}"
+        else:
+            response = f"❌ Analysis failed: {result['error']}"
                 
         return [types.TextContent(type="text", text=response)]
     
