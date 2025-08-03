@@ -49,25 +49,25 @@ MODEL_CONFIG = {
     "primary": "openai-o3",
     "secondary": "google-gemini-2.5-pro", 
     "max_tokens": 32000,
-    "temperature": 0.1  # Lower temperature for more focused planning
+    "temperature": 0.4  # Balanced temperature for creative yet focused planning
 }
 
+# Global HTTP client for stateless operation
+limits = httpx.Limits(max_keepalive_connections=5, max_connections=10)
+global_client = httpx.AsyncClient(
+    timeout=300.0,  # 5min timeout for O3
+    limits=limits,
+    http2=True  # Enable HTTP/2 for better performance
+)
+
 class PlanningAgent:
+    """Stateless planning agent - no instance state maintained"""
+    
     def __init__(self):
-        # Enhanced connection pooling
-        limits = httpx.Limits(max_keepalive_connections=5, max_connections=10)
-        self.client = httpx.AsyncClient(
-            timeout=300.0,  # 5min timeout for O3
-            limits=limits,
-            http2=True  # Enable HTTP/2 for better performance
-        )
+        # No instance state - everything is stateless
         self.logger = logger.bind(component="planning_agent")
         
-    async def __aenter__(self):
-        return self
-        
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        await self.client.aclose()
+    # Removed context manager - stateless operation
 
     @retry(
         stop=stop_after_attempt(3),
@@ -82,7 +82,7 @@ class PlanningAgent:
         log.info("Starting planning request", prompt_length=len(prompt))
         
         try:
-            response = await self.client.post(
+            response = await global_client.post(
                 f"{LITELLM_URL}/v1/chat/completions",
                 headers={
                     "Authorization": f"Bearer {LITELLM_API_KEY}",
@@ -266,8 +266,8 @@ Please create a comprehensive implementation plan that includes:
 Please be specific and actionable in your recommendations.
         """.strip()
         
-        async with PlanningAgent() as agent:
-            result = await agent.create_plan(planning_prompt, preferred_model)
+        agent = PlanningAgent()
+        result = await agent.create_plan(planning_prompt, preferred_model)
             
             if result["success"]:
                 response = f"""# Planning Result
@@ -302,9 +302,9 @@ Please assess:
 Be concise but thorough in your analysis.
         """.strip()
         
-        async with PlanningAgent() as agent:
-            # Use Gemini for quick complexity analysis
-            result = await agent.plan_with_model(complexity_prompt, "google-gemini-2.5-pro")
+        agent = PlanningAgent()
+        # Use Gemini for quick complexity analysis
+        result = await agent.plan_with_model(complexity_prompt, "google-gemini-2.5-pro")
             
             if result["success"]:
                 response = f"""# Complexity Analysis
